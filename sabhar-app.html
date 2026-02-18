@@ -166,33 +166,85 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .etray.show{display:flex}
 .ep{background:none;border:none;font-size:21px;cursor:pointer}
 
-/* ── VIDEO CALL SCREEN ── */
-#vcScreen{display:none;position:fixed;inset:0;background:#0d0d0d;z-index:800;flex-direction:column}
-#vcScreen.show{display:flex}
+/* ══════════════════════════════════════════
+   CUSTOM ROMANTIC VIDEO CALL UI
+══════════════════════════════════════════ */
 
-/* The iframe that holds the video call */
-#vcFrame{flex:1;border:none;width:100%;display:none}
-#vcFrame.show{display:block}
+/* Floating hearts */
+.hearts-canvas{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.fheart{position:absolute;font-size:18px;animation:floatUp linear forwards;pointer-events:none}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1) rotate(-10deg)}100%{opacity:0;transform:translateY(-220px) scale(.2) rotate(10deg)}}
 
-/* Waiting / ringing overlay */
-#vcWaiting{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-.vc-avatar-big{width:90px;height:90px;border-radius:50%;border:3px solid var(--pink);background:var(--pink-light);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:var(--pink);overflow:hidden;animation:vcpulse 1.5s infinite}
-.vc-avatar-big img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-@keyframes vcpulse{0%,100%{box-shadow:0 0 0 0 rgba(232,99,122,.5)}50%{box-shadow:0 0 0 18px rgba(232,99,122,0)}}
-.vc-name{font-family:'Playfair Display',serif;font-size:1.4rem;color:white}
-.vc-status-txt{font-size:.85rem;color:rgba(255,255,255,.5);letter-spacing:1px}
-.vc-end-btn{margin-top:20px;width:64px;height:64px;border-radius:50%;background:#ef4444;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,.4)}
+/* Pulse rings around avatar */
+.ring-wrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:36px}
+.ring-ring{position:absolute;border-radius:50%;border:2px solid rgba(232,99,122,.35);animation:ringPulse 2s ease-out infinite}
+.ring-ring:nth-child(1){width:100%;height:100%;animation-delay:0s}
+.ring-ring:nth-child(2){width:138%;height:138%;animation-delay:.5s}
+.ring-ring:nth-child(3){width:176%;height:176%;animation-delay:1s}
+@keyframes ringPulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1);opacity:0}}
+.ring-inner-av{position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:38px;color:var(--pink);background:rgba(232,99,122,.15);border:3px solid rgba(232,99,122,.5)}
+.ring-inner-av img{width:100%;height:100%;object-fit:cover}
 
-/* Incoming call screen */
-#incomingScreen{display:none;position:fixed;inset:0;background:rgba(13,13,13,.96);z-index:900;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-#incomingScreen.show{display:flex}
-.inc-avatar{width:90px;height:90px;border-radius:50%;border:3px solid var(--pink);background:var(--pink-light);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:var(--pink);overflow:hidden;animation:vcpulse 1.2s infinite}
-.inc-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.inc-name{font-family:'Playfair Display',serif;font-size:1.5rem;color:white}
-.inc-sub{font-size:.85rem;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:20px}
-.inc-btns{display:flex;gap:48px}
-.inc-accept{width:68px;height:68px;border-radius:50%;background:#22c55e;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 24px rgba(34,197,94,.5)}
-.inc-reject{width:68px;height:68px;border-radius:50%;background:#ef4444;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 24px rgba(239,68,68,.5)}
+/* RINGING SCREEN (outgoing) */
+#vcRinging{display:none;position:fixed;inset:0;z-index:800;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#120608 0%,#25101a 50%,#120608 100%)}
+#vcRinging.show{display:flex}
+
+/* INCOMING SCREEN */
+#vcIncoming{display:none;position:fixed;inset:0;z-index:900;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#0a0510 0%,#1a0a22 50%,#0a0510 100%)}
+#vcIncoming.show{display:flex}
+
+.vc-call-name{font-family:'Playfair Display',serif;font-size:1.75rem;color:white;margin-bottom:6px;text-align:center}
+.vc-call-tag{font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:8px}
+.vc-call-status{font-size:.82rem;color:rgba(232,99,122,.75);letter-spacing:1.5px;text-align:center;margin-bottom:44px;animation:softBlink 1.8s infinite}
+@keyframes softBlink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* Call action buttons */
+.vc-actions{display:flex;gap:48px;align-items:center}
+.vc-accept-btn{width:74px;height:74px;border-radius:50%;background:radial-gradient(circle,#34d058,#22a745);border:none;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(52,208,88,.5);animation:acceptGlow 1.6s infinite}
+@keyframes acceptGlow{0%,100%{box-shadow:0 6px 24px rgba(52,208,88,.5)}50%{box-shadow:0 6px 40px rgba(52,208,88,.9),0 0 0 14px rgba(52,208,88,.08)}}
+.vc-reject-btn{width:74px;height:74px;border-radius:50%;background:radial-gradient(circle,#f05252,#c81e1e);border:none;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(240,82,82,.5)}
+.vc-hangup-btn{width:68px;height:68px;border-radius:50%;background:radial-gradient(circle,#f05252,#c81e1e);border:none;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(240,82,82,.5)}
+
+/* ACTIVE CALL SCREEN */
+#vcActive{display:none;position:fixed;inset:0;z-index:800;flex-direction:column;background:#0a0a0a}
+#vcActive.show{display:flex}
+.vc-videos{flex:1;position:relative;overflow:hidden;background:#111}
+#remoteVideo{width:100%;height:100%;object-fit:cover;display:block}
+#localVideo{position:absolute;top:14px;right:14px;width:92px;height:134px;border-radius:18px;object-fit:cover;border:2px solid rgba(255,255,255,.2);box-shadow:0 4px 24px rgba(0,0,0,.7);z-index:5;background:#222}
+.vc-remote-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:linear-gradient(160deg,#120608,#25101a);transition:opacity .6s}
+.vc-placeholder-av{width:100px;height:100px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:36px;color:var(--pink);background:rgba(232,99,122,.1);border:2px solid rgba(232,99,122,.25)}
+.vc-placeholder-av img{width:100%;height:100%;object-fit:cover}
+.vc-placeholder-name{font-family:'Playfair Display',serif;color:rgba(255,255,255,.6);font-size:1.2rem}
+.vc-placeholder-status{font-size:.75rem;color:rgba(255,255,255,.25);letter-spacing:2px;animation:softBlink 1.8s infinite}
+
+/* Top gradient overlay */
+.vc-top-bar{position:absolute;top:0;left:0;right:0;height:110px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);z-index:6;display:flex;align-items:flex-start;padding:18px 18px 0}
+.vc-top-info{display:flex;align-items:center;gap:10px}
+.vc-top-av{width:38px;height:38px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--pink);background:rgba(232,99,122,.12);border:1.5px solid rgba(232,99,122,.35)}
+.vc-top-av img{width:100%;height:100%;object-fit:cover}
+.vc-top-name{font-family:'Playfair Display',serif;color:white;font-size:.95rem;display:block}
+.vc-top-timer{font-size:.7rem;color:rgba(255,255,255,.4);letter-spacing:1px;display:block}
+
+/* Love watermark */
+.vc-love-mark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Playfair Display',serif;font-size:1rem;color:rgba(232,99,122,.3);text-align:center;pointer-events:none;z-index:2;letter-spacing:2px;transition:opacity .5s}
+.vc-love-mark.fade{opacity:0}
+
+/* Bottom controls */
+.vc-bottom-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.9) 60%,transparent);padding:24px 20px 40px;z-index:6;display:flex;align-items:center;justify-content:center;gap:18px}
+.vc-ctrl{width:56px;height:56px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);transition:all .2s}
+.vc-ctrl.muted{background:rgba(255,255,255,.2)}
+.vc-ctrl.end-call{background:radial-gradient(circle,#f05252,#c81e1e);box-shadow:0 4px 20px rgba(240,82,82,.6);width:64px;height:64px;font-size:24px}
+
+/* CALL ENDED SCREEN */
+#vcEnded{display:none;position:fixed;inset:0;z-index:1000;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#120608,#25101a,#120608)}
+#vcEnded.show{display:flex;animation:fadeIn .6s ease}
+@keyframes fadeIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.ended-emoji{font-size:64px;margin-bottom:18px;animation:hb .7s ease infinite alternate}
+@keyframes hb{from{transform:scale(1)}to{transform:scale(1.18)}}
+.ended-h{font-family:'Playfair Display',serif;font-size:1.7rem;color:white;margin-bottom:8px;text-align:center}
+.ended-sub{font-size:.85rem;color:rgba(255,255,255,.38);letter-spacing:1px;margin-bottom:10px;text-align:center}
+.ended-dur{font-size:.78rem;color:rgba(232,99,122,.65);margin-bottom:44px;text-align:center}
+.ended-back{background:rgba(232,99,122,.18);border:1px solid rgba(232,99,122,.35);border-radius:14px;color:rgba(255,255,255,.75);padding:13px 36px;font-family:'DM Sans',sans-serif;font-size:.9rem;cursor:pointer;letter-spacing:.5px}
 
 /* Profile modal */
 .prof-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
@@ -273,28 +325,75 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
   </div>
 </div>
 
-<!-- INCOMING CALL -->
-<div id="incomingScreen">
-  <div class="inc-avatar" id="incAvatar"><span id="incAvatarTxt">?</span></div>
-  <div class="inc-name" id="incName">Someone</div>
-  <div class="inc-sub">📹 Video Call incoming...</div>
-  <div class="inc-btns">
-    <button class="inc-accept" onclick="acceptCall()">📞</button>
-    <button class="inc-reject" onclick="rejectCall()">📵</button>
+<!-- RINGING SCREEN (outgoing call) -->
+<div id="vcRinging">
+  <div class="hearts-canvas" id="ringingHearts"></div>
+  <div class="ring-wrap">
+    <div class="ring-ring"></div><div class="ring-ring"></div><div class="ring-ring"></div>
+    <div class="ring-inner-av" id="ringAv"><span id="ringAvTxt"></span></div>
+  </div>
+  <div class="vc-call-name" id="ringName"></div>
+  <div class="vc-call-tag">Sabhar ❤️</div>
+  <div class="vc-call-status">Ringing...</div>
+  <div class="vc-actions">
+    <button class="vc-hangup-btn" onclick="endCall(true)">📵</button>
   </div>
 </div>
 
-<!-- VIDEO CALL SCREEN -->
-<div id="vcScreen">
-  <!-- Waiting / ringing state -->
-  <div id="vcWaiting">
-    <div class="vc-avatar-big" id="vcAv"><span id="vcAvTxt"></span></div>
-    <div class="vc-name" id="vcName"></div>
-    <div class="vc-status-txt" id="vcStatTxt">Calling...</div>
-    <button class="vc-end-btn" onclick="endCall()">📵</button>
+<!-- INCOMING CALL SCREEN -->
+<div id="vcIncoming">
+  <div class="hearts-canvas" id="incomingHearts"></div>
+  <div class="ring-wrap">
+    <div class="ring-ring"></div><div class="ring-ring"></div><div class="ring-ring"></div>
+    <div class="ring-inner-av" id="incAv"><span id="incAvTxt"></span></div>
   </div>
-  <!-- Actual video iframe (Jitsi Meet) -->
-  <iframe id="vcFrame" allow="camera;microphone;fullscreen;display-capture" allowfullscreen></iframe>
+  <div class="vc-call-name" id="incName"></div>
+  <div class="vc-call-tag">Sabhar ❤️</div>
+  <div class="vc-call-status">is calling you... 💕</div>
+  <div class="vc-actions">
+    <button class="vc-accept-btn" onclick="acceptCall()">📞</button>
+    <button class="vc-reject-btn" onclick="rejectCall()">📵</button>
+  </div>
+</div>
+
+<!-- ACTIVE CALL SCREEN -->
+<div id="vcActive">
+  <div class="vc-videos">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div class="vc-remote-placeholder" id="remotePlaceholder">
+      <div class="vc-placeholder-av" id="remoteAv"><span id="remoteAvTxt"></span></div>
+      <div class="vc-placeholder-name" id="remoteName"></div>
+      <div class="vc-placeholder-status">Connecting...</div>
+    </div>
+    <div class="hearts-canvas" id="activeHearts"></div>
+    <div class="vc-love-mark" id="loveMark">Harsh ❤️ Saburi</div>
+    <div class="vc-top-bar">
+      <div class="vc-top-info">
+        <div class="vc-top-av" id="topAv"><span id="topAvTxt"></span></div>
+        <div>
+          <span class="vc-top-name" id="topName"></span>
+          <span class="vc-top-timer" id="callTimer">00:00</span>
+        </div>
+      </div>
+    </div>
+    <div class="vc-bottom-bar">
+      <button class="vc-ctrl" id="btnMic" onclick="toggleMic()">🎙️</button>
+      <button class="vc-ctrl" id="btnCam" onclick="toggleCam()">📷</button>
+      <button class="vc-ctrl end-call" onclick="endCall(false)">📵</button>
+      <button class="vc-ctrl" onclick="flipCamera()">🔄</button>
+      <button class="vc-ctrl" onclick="sendCallHeart()">❤️</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALL ENDED SCREEN -->
+<div id="vcEnded">
+  <div class="ended-emoji">❤️</div>
+  <div class="ended-h">That was beautiful</div>
+  <div class="ended-sub">Talk soon, <span id="endedName"></span> 🌸</div>
+  <div class="ended-dur" id="endedDur"></div>
+  <button class="ended-back" onclick="closeEndedScreen()">Back to chat ❤️</button>
 </div>
 
 <!-- LOGIN -->
@@ -418,7 +517,7 @@ let rec=null, recChunks=[];
 let activeMenu=null;
 let unsubMsgs=null, unsubPresence=null, unsubTyping=null;
 let typingTimer=null;
-let callActive=false;
+let callActive=false,callTimerInterval=null,callSeconds=0;
 let incomingCallUnsub=null;
 
 // ─────────────────────────────────────────────────
@@ -779,119 +878,298 @@ function closeMenu(){if(activeMenu){activeMenu.remove();activeMenu=null;}}
 // Signalling via Firestore so partner gets notified
 // ─────────────────────────────────────────────────
 function subscribeCallSignal(){
-  // Listen for incoming call signals from partner
   const other=me==='harsh'?'sabu':'harsh';
-  incomingCallUnsub=window._onSnapshot(window._doc(window._db,'calls','signal'), snap=>{
-    if(!snap.exists()) return;
+  incomingCallUnsub=window._onSnapshot(window._doc(window._db,'calls','signal'),snap=>{
+    if(!snap.exists())return;
     const data=snap.data();
-    // If partner sent a "calling" signal to me
-    if(data.to===me && data.from===other && data.status==='calling'){
-      showIncomingCall(other);
+    if(!data.ts)return;
+    const age=Date.now()-(data.ts.toMillis?data.ts.toMillis():Date.now());
+    if(age>35000)return;
+    if(data.to===me&&data.from===other&&data.status==='calling'&&!callActive){
+      // PeerJS handles the actual call stream, Firestore is just backup signal
     }
-    // If my call was rejected
-    if(data.to===other && data.from===me && data.status==='rejected'){
-      showToast(USERS[other].name+' is busy 💔');
-      endCall();
+    if(data.to===other&&data.from===me&&data.status==='rejected'){
+      showToast(USERS[other].name+' is busy 💔');endCall(true);
     }
-    // If call ended
-    if(data.status==='ended' && callActive){
-      endCall();
+    if(data.status==='ended'&&callActive){endCall(false);}
+  });
+}
+
+// PeerJS peer init
+function initPeer(){
+  if(peer){try{peer.destroy();}catch(e){}}
+  const peerId=PEER_IDS[me];
+  peer=new Peer(peerId,{
+    host:'0.peerjs.com',port:443,path:'/',secure:true,
+    config:{iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'},
+      {urls:'stun:stun2.l.google.com:19302'},
+      {urls:'stun:global.stun.twilio.com:3478'}
+    ]}
+  });
+  peer.on('call',incomingCall=>{
+    const caller=me==='harsh'?'sabu':'harsh';
+    pendingCall=incomingCall;
+    showIncomingScreen(caller);
+  });
+  peer.on('error',err=>{
+    if(err.type==='unavailable-id'){
+      setTimeout(()=>{
+        peer=new Peer(peerId+'-'+Math.floor(Math.random()*1000),{host:'0.peerjs.com',port:443,path:'/',secure:true});
+      },1000);
     }
   });
 }
 
 async function startVideoCall(){
-  if(callActive){showToast('Call already active');return;}
+  if(callActive){showToast('Already in a call 📹');return;}
   const other=me==='harsh'?'sabu':'harsh';
-  // Send call signal via Firestore
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:true});}
+  catch(e){document.getElementById('permModal').classList.add('show');return;}
+  localStream=stream;
+  document.getElementById('localVideo').srcObject=stream;
+  showRingingScreen(other);
+  // Signal via Firestore
   if(window._fbReady){
     await window._setDoc(window._doc(window._db,'calls','signal'),{
-      from:me, to:other, status:'calling', ts:window._serverTimestamp()
-    });
+      from:me,to:other,status:'calling',ts:window._serverTimestamp()
+    }).catch(()=>{});
   }
-  showCallingScreen(other);
-  // Open Jitsi room
-  openJitsiRoom();
-  // Log call in chat
+  // WebRTC call
+  if(!peer||!peer.open){initPeer();setTimeout(()=>makeCall(other,stream),2000);}
+  else{makeCall(other,stream);}
+  // Log in chat
   window._addDoc(window._col(window._db,'messages'),{
-    sender:me,type:'call',text:'📹 Video call started',data:'',
+    sender:me,type:'call',text:'📹 Started a video call',data:'',
     time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
     react:'',createdAt:window._serverTimestamp()
   }).catch(()=>{});
 }
 
-function showCallingScreen(other){
-  callActive=true;
-  const otherImg=document.getElementById(other==='harsh'?'avHarsh':'avSabu').querySelector('img');
-  if(otherImg){
-    document.getElementById('vcAv').innerHTML='<img src="'+otherImg.src+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-  } else {
-    document.getElementById('vcAvTxt').textContent=USERS[other].init;
-  }
-  document.getElementById('vcName').textContent=USERS[other].name;
-  document.getElementById('vcStatTxt').textContent='Calling...';
-  document.getElementById('vcWaiting').style.display='flex';
-  document.getElementById('vcFrame').classList.remove('show');
-  document.getElementById('vcScreen').classList.add('show');
+function makeCall(other,stream){
+  const call=peer.call(PEER_IDS[other],stream);
+  currentCall=call;
+  call.on('stream',remoteStream=>{
+    document.getElementById('remoteVideo').srcObject=remoteStream;
+    document.getElementById('vcRinging').classList.remove('show');
+    showActiveScreen(other);
+    fadeOutPlaceholder();
+  });
+  call.on('close',()=>endCall(false));
+  call.on('error',()=>endCall(false));
+  setTimeout(()=>{
+    if(callActive&&document.getElementById('vcRinging').classList.contains('show')){
+      showToast('No answer 💔');endCall(true);
+    }
+  },30000);
 }
 
-function showIncomingCall(caller){
-  if(callActive) return; // already in a call
-  const callerImg=document.getElementById(caller==='harsh'?'avHarsh':'avSabu').querySelector('img');
-  if(callerImg){
-    document.getElementById('incAvatar').innerHTML='<img src="'+callerImg.src+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-  } else {
-    document.getElementById('incAvatarTxt').textContent=USERS[caller].init;
-  }
+function showRingingScreen(other){
+  callActive=true;
+  setVcAv('ringAv','ringAvTxt',other);
+  document.getElementById('ringName').textContent=USERS[other].name;
+  document.getElementById('vcRinging').classList.add('show');
+  startHearts('ringingHearts');
+  startTimer();
+}
+
+function showIncomingScreen(caller){
+  if(callActive)return;
+  setVcAv('incAv','incAvTxt',caller);
   document.getElementById('incName').textContent=USERS[caller].name;
-  document.getElementById('incomingScreen').classList.add('show');
+  document.getElementById('vcIncoming').classList.add('show');
+  startHearts('incomingHearts');
+  playTone();
+}
+
+function showActiveScreen(other){
+  setVcAv('remoteAv','remoteAvTxt',other);
+  setVcAv('topAv','topAvTxt',other);
+  document.getElementById('remoteName').textContent=USERS[other].name;
+  document.getElementById('topName').textContent=USERS[other].name;
+  document.getElementById('vcActive').classList.add('show');
+  startHearts('activeHearts');
+  setTimeout(()=>document.getElementById('loveMark').classList.add('fade'),4000);
+}
+
+function fadeOutPlaceholder(){
+  const ph=document.getElementById('remotePlaceholder');
+  ph.style.opacity='0';
+  setTimeout(()=>ph.style.display='none',600);
+}
+
+function setVcAv(elId,txtId,user){
+  const el=document.getElementById(elId);
+  const src=getAvatarSrc(user);
+  if(src){el.innerHTML='<img src="'+src+'">';}
+  else{document.getElementById(txtId).textContent=USERS[user].init;}
+}
+
+function getAvatarSrc(user){
+  const el=document.getElementById(user==='harsh'?'avHarsh':'avSabu');
+  const img=el.querySelector('img');return img?img.src:null;
 }
 
 async function acceptCall(){
-  document.getElementById('incomingScreen').classList.remove('show');
-  const other=me==='harsh'?'sabu':'harsh';
+  stopTone();
+  document.getElementById('vcIncoming').classList.remove('show');
+  if(!pendingCall)return;
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});}
+  catch(e){document.getElementById('permModal').classList.add('show');return;}
+  localStream=stream;
+  document.getElementById('localVideo').srcObject=stream;
+  callActive=true;
+  const caller=me==='harsh'?'sabu':'harsh';
+  showActiveScreen(caller);
+  pendingCall.answer(stream);
+  currentCall=pendingCall;pendingCall=null;
+  currentCall.on('stream',remoteStream=>{
+    document.getElementById('remoteVideo').srcObject=remoteStream;
+    fadeOutPlaceholder();
+  });
+  currentCall.on('close',()=>endCall(false));
+  startTimer();
   if(window._fbReady){
     await window._setDoc(window._doc(window._db,'calls','signal'),{
-      from:other, to:me, status:'accepted', ts:window._serverTimestamp()
-    });
+      from:caller,to:me,status:'accepted',ts:window._serverTimestamp()
+    }).catch(()=>{});
   }
-  callActive=true;
-  document.getElementById('vcWaiting').style.display='none';
-  document.getElementById('vcScreen').classList.add('show');
-  openJitsiRoom();
 }
 
 async function rejectCall(){
-  document.getElementById('incomingScreen').classList.remove('show');
-  const other=me==='harsh'?'sabu':'harsh';
+  stopTone();
+  document.getElementById('vcIncoming').classList.remove('show');
+  if(pendingCall){pendingCall.close();pendingCall=null;}
+  const caller=me==='harsh'?'sabu':'harsh';
   if(window._fbReady){
     await window._setDoc(window._doc(window._db,'calls','signal'),{
-      from:me, to:other, status:'rejected', ts:window._serverTimestamp()
-    });
+      from:me,to:caller,status:'rejected',ts:window._serverTimestamp()
+    }).catch(()=>{});
   }
 }
 
-function openJitsiRoom(){
-  // Jitsi Meet — 100% free, no signup, professional WebRTC quality
-  const frame=document.getElementById('vcFrame');
-  const name=encodeURIComponent(USERS[me].name);
-  frame.src='https://meet.jit.si/SabharLoveHarshSabu2024#userInfo.displayName="'+name+'"&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.disableDeepLinking=true';
+async function endCall(silent){
+  stopTone();stopHearts();stopTimer();
+  const wasConnected=document.getElementById('vcActive').classList.contains('show');
+  callActive=false;
+  if(currentCall){try{currentCall.close();}catch(e){}currentCall=null;}
+  if(pendingCall){try{pendingCall.close();}catch(e){}pendingCall=null;}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  document.getElementById('remoteVideo').srcObject=null;
+  document.getElementById('localVideo').srcObject=null;
+  document.getElementById('vcRinging').classList.remove('show');
+  document.getElementById('vcIncoming').classList.remove('show');
+  document.getElementById('vcActive').classList.remove('show');
+  document.getElementById('remotePlaceholder').style.display='flex';
+  document.getElementById('remotePlaceholder').style.opacity='1';
+  document.getElementById('loveMark').classList.remove('fade');
+  if(wasConnected){showEndedScreen();}
+  if(!silent&&window._fbReady){
+    await window._setDoc(window._doc(window._db,'calls','signal'),{status:'ended',ts:window._serverTimestamp()}).catch(()=>{});
+  }
+}
+
+function showEndedScreen(){
+  document.getElementById('endedName').textContent=USERS[me].name;
+  const m=String(Math.floor(callSeconds/60)).padStart(2,'0');
+  const s=String(callSeconds%60).padStart(2,'0');
+  document.getElementById('endedDur').textContent='Call duration: '+m+':'+s;
+  document.getElementById('vcEnded').classList.add('show');
+}
+function closeEndedScreen(){document.getElementById('vcEnded').classList.remove('show');}
+
+// ── Call controls ──
+function toggleMic(){
+  micOn=!micOn;
+  if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=micOn);
+  document.getElementById('btnMic').textContent=micOn?'🎙️':'🔇';
+  document.getElementById('btnMic').classList.toggle('muted',!micOn);
+}
+function toggleCam(){
+  camOn=!camOn;
+  if(localStream)localStream.getVideoTracks().forEach(t=>t.enabled=camOn);
+  document.getElementById('btnCam').textContent=camOn?'📷':'🚫';
+  document.getElementById('btnCam').classList.toggle('muted',!camOn);
+}
+async function flipCamera(){
+  if(!localStream)return;
+  facingMode=facingMode==='user'?'environment':'user';
+  try{
+    const newStream=await navigator.mediaDevices.getUserMedia({video:{facingMode},audio:false});
+    const newVid=newStream.getVideoTracks()[0];
+    if(currentCall&&currentCall.peerConnection){
+      const sender=currentCall.peerConnection.getSenders().find(s=>s.track&&s.track.kind==='video');
+      if(sender)await sender.replaceTrack(newVid);
+    }
+    localStream.getVideoTracks().forEach(t=>t.stop());
+    const combined=new MediaStream([newVid,...localStream.getAudioTracks()]);
+    localStream=combined;
+    document.getElementById('localVideo').srcObject=combined;
+  }catch(e){showToast('Flip not supported on this device');}
+}
+function sendCallHeart(){
+  for(let i=0;i<5;i++)setTimeout(()=>spawnHeart('activeHearts'),i*150);
+}
+
+// ── Timer ──
+function startTimer(){
+  callSeconds=0;
+  callTimerInterval=setInterval(()=>{
+    callSeconds++;
+    const m=String(Math.floor(callSeconds/60)).padStart(2,'0');
+    const s=String(callSeconds%60).padStart(2,'0');
+    document.getElementById('callTimer').textContent=m+':'+s;
+  },1000);
+}
+function stopTimer(){clearInterval(callTimerInterval);callTimerInterval=null;}
+
+// ── Ringtone ──
+let toneInterval=null;
+function playTone(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    function note(freq,t,dur){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(0,ctx.currentTime+t);
+      g.gain.linearRampToValueAtTime(.25,ctx.currentTime+t+.05);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+t+dur-.05);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+dur);
+    }
+    function melody(){note(523,.0,.25);note(659,.3,.25);note(784,.6,.25);note(1047,.9,.4);}
+    melody();toneInterval=setInterval(melody,2200);
+  }catch(e){}
+}
+function stopTone(){if(toneInterval){clearInterval(toneInterval);toneInterval=null;}}
+
+// ── Floating hearts ──
+let heartLoopId=null;
+function startHearts(cid){
+  function loop(){spawnHeart(cid);heartLoopId=setTimeout(loop,600+Math.random()*1000);}
+  loop();
+}
+function spawnHeart(cid){
+  const c=document.getElementById(cid);if(!c)return;
+  const emojis=['❤️','💕','🌸','💗','✨','💖','🥰'];
+  const h=document.createElement('div');h.className='fheart';
+  h.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+  h.style.left=(5+Math.random()*88)+'%';
+  h.style.bottom='-10px';
+  h.style.animationDuration=(2+Math.random()*2.5)+'s';
+  c.appendChild(h);setTimeout(()=>h.remove(),5000);
+}
+function stopHearts(){clearTimeout(heartLoopId);heartLoopId=null;}
   frame.classList.add('show');
   document.getElementById('vcWaiting').style.display='none';
 }
 
 async function endCall(){
   callActive=false;
-  document.getElementById('vcScreen').classList.remove('show');
-  document.getElementById('incomingScreen').classList.remove('show');
-  const frame=document.getElementById('vcFrame');
-  frame.src=''; frame.classList.remove('show');
-  document.getElementById('vcWaiting').style.display='flex';
-  if(window._fbReady){
-    await window._setDoc(window._doc(window._db,'calls','signal'),{
-      status:'ended', ts:window._serverTimestamp()
-    }).catch(()=>{});
-  }
+  
+  
 }
 
 // ─────────────────────────────────────────────────
