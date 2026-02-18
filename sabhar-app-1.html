@@ -6,6 +6,47 @@
 <title>Sabhar ❤️</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Playfair+Display:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB4IuvlYH48tocU6ul0eyV9VO0pCqPCMnI",
+  authDomain: "sabhar-a9a44.firebaseapp.com",
+  projectId: "sabhar-a9a44",
+  storageBucket: "sabhar-a9a44.appspot.com",
+  messagingSenderId: "25127481788",
+  appId: "1:25127481788:web:4b53833a738b3a0f5c9b1a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const storage = getStorage(app);
+
+// Expose to window so non-module JS can use them
+window._db = db;
+window._storage = storage;
+window._fbReady = true;
+window._collection = collection;
+window._addDoc = addDoc;
+window._onSnapshot = onSnapshot;
+window._query = query;
+window._orderBy = orderBy;
+window._deleteDoc = deleteDoc;
+window._doc = doc;
+window._updateDoc = updateDoc;
+window._serverTimestamp = serverTimestamp;
+window._ref = ref;
+window._uploadString = uploadString;
+window._getDownloadURL = getDownloadURL;
+
+// Signal app that Firebase is ready
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--pink:#e8637a;--pink-light:#fdeef1;--pink-mid:#f5b8c4;--bg:#fff9fa;--white:#fff;--text:#2d2d2d;--muted:#aaa;--border:#f0e0e4}
@@ -28,6 +69,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .shake{animation:sh .35s ease}
 @keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 
+/* CONNECTING OVERLAY */
+#connectingOverlay{position:fixed;inset:0;background:rgba(255,249,250,.95);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#connectingOverlay.hide{display:none}
+.spinner{width:40px;height:40px;border:3px solid var(--pink-light);border-top:3px solid var(--pink);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.conn-txt{font-family:'Playfair Display',serif;color:var(--pink);font-size:1.1rem}
+
 /* CHAT */
 #chatScreen{display:none;flex-direction:column;height:100dvh;background:var(--bg)}
 #chatScreen.show{display:flex}
@@ -36,10 +84,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .header-title{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--pink);font-style:italic}
 .header-right{display:flex;align-items:center;gap:8px}
 .hbtn{background:none;border:1px solid var(--border);border-radius:8px;font-size:.72rem;color:var(--muted);cursor:pointer;padding:4px 10px}
-
-/* Video call button in header */
 .vcall-btn{background:linear-gradient(135deg,var(--pink),#f0a0b0);border:none;border-radius:10px;color:white;font-size:.8rem;font-weight:500;cursor:pointer;padding:7px 13px;display:flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(232,99,122,.3);transition:all .2s;font-family:'DM Sans',sans-serif}
-.vcall-btn:active{transform:scale(.96)}
+
+/* Online dot */
+.online-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:4px;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* Profile strip */
 .profile-strip{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -48,7 +97,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .profile-pic img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .profile-name{font-size:.68rem;color:var(--muted)}
 .profile-edit-hint{font-size:.6rem;color:var(--pink-mid)}
-.profile-hearts{font-size:1.2rem;margin:0 4px}
 
 /* Ann card */
 .ann-card{background:linear-gradient(135deg,#fff0f3,#fff8fa);border:1px solid #f5c6d0;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -97,7 +145,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .msg-menu .divider{height:1px;background:var(--border)}
 
 /* Typing */
-.typing-bar{padding:3px 14px;min-height:20px;flex-shrink:0}
+.typing-bar{padding:3px 14px;min-height:22px;flex-shrink:0}
 .ttext{font-size:.73rem;color:var(--muted);font-style:italic;display:none}
 .ttext.show{display:block}
 .tdots{display:inline-flex;gap:3px;margin-left:4px;vertical-align:middle}
@@ -124,97 +172,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .etray.show{display:flex}
 .ep{background:none;border:none;font-size:21px;cursor:pointer}
 
-/* ── VIDEO CALL SCREEN ── */
-#vcScreen{
-  display:none;position:fixed;inset:0;
-  background:#0d0d0d;z-index:300;
-  flex-direction:column;
-}
+/* VIDEO CALL */
+#vcScreen{display:none;position:fixed;inset:0;background:#0d0d0d;z-index:300;flex-direction:column}
 #vcScreen.show{display:flex}
-
-.vc-videos{
-  flex:1;position:relative;overflow:hidden;
-}
-
-/* Remote video — fills screen */
-#remoteVideo{
-  width:100%;height:100%;
-  object-fit:cover;
-  background:#1a1a1a;
-  display:block;
-}
-
-/* Local video — small PiP corner */
-#localVideo{
-  position:absolute;
-  top:14px;right:14px;
-  width:100px;height:140px;
-  border-radius:14px;
-  object-fit:cover;
-  border:2px solid rgba(255,255,255,.3);
-  background:#333;
-  box-shadow:0 4px 16px rgba(0,0,0,.5);
-  z-index:10;
-}
-
-/* Call status overlay */
-.vc-status{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  background:rgba(13,13,13,.85);
-  z-index:5;
-  transition:opacity .4s;
-}
+.vc-videos{flex:1;position:relative;overflow:hidden}
+#remoteVideo{width:100%;height:100%;object-fit:cover;background:#1a1a1a;display:block}
+#localVideo{position:absolute;top:14px;right:14px;width:100px;height:140px;border-radius:14px;object-fit:cover;border:2px solid rgba(255,255,255,.3);background:#333;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:10}
+.vc-status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(13,13,13,.85);z-index:5;transition:opacity .4s}
 .vc-status.hidden{opacity:0;pointer-events:none}
-.vc-avatar-big{
-  width:90px;height:90px;border-radius:50%;
-  border:3px solid var(--pink);
-  background:var(--pink-light);
-  display:flex;align-items:center;justify-content:center;
-  font-size:36px;font-weight:700;color:var(--pink);
-  overflow:hidden;margin-bottom:16px;
-}
+.vc-avatar-big{width:90px;height:90px;border-radius:50%;border:3px solid var(--pink);background:var(--pink-light);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:var(--pink);overflow:hidden;margin-bottom:16px;animation:vcpulse 1.5s infinite}
 .vc-avatar-big img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .vc-name{font-family:'Playfair Display',serif;font-size:1.4rem;color:white;margin-bottom:8px}
 .vc-stat{font-size:.85rem;color:rgba(255,255,255,.5);letter-spacing:1px}
-.vc-pulse{animation:vcpulse 1.5s infinite}
 @keyframes vcpulse{0%,100%{box-shadow:0 0 0 0 rgba(232,99,122,.5)}50%{box-shadow:0 0 0 16px rgba(232,99,122,0)}}
-
-/* Incoming call screen */
-#incomingScreen{
-  display:none;position:fixed;inset:0;
-  background:rgba(13,13,13,.95);
-  z-index:400;flex-direction:column;
-  align-items:center;justify-content:center;
-}
+#incomingScreen{display:none;position:fixed;inset:0;background:rgba(13,13,13,.95);z-index:400;flex-direction:column;align-items:center;justify-content:center}
 #incomingScreen.show{display:flex}
 .inc-avatar{width:90px;height:90px;border-radius:50%;border:3px solid var(--pink);background:var(--pink-light);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:var(--pink);overflow:hidden;margin-bottom:16px;animation:vcpulse 1.2s infinite}
-.inc-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .inc-name{font-family:'Playfair Display',serif;font-size:1.5rem;color:white;margin-bottom:6px}
 .inc-sub{font-size:.85rem;color:rgba(255,255,255,.5);margin-bottom:40px;letter-spacing:1px}
 .inc-btns{display:flex;gap:40px}
-.inc-accept{width:64px;height:64px;border-radius:50%;background:#22c55e;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(34,197,94,.4);transition:transform .15s}
-.inc-reject{width:64px;height:64px;border-radius:50%;background:#ef4444;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,.4);transition:transform .15s}
-.inc-accept:active,.inc-reject:active{transform:scale(.92)}
-
-/* Call controls bar */
-.vc-controls{
-  background:rgba(0,0,0,.7);
-  backdrop-filter:blur(12px);
-  padding:16px 24px 24px;
-  display:flex;align-items:center;justify-content:center;
-  gap:20px;flex-shrink:0;
-}
-.vc-ctrl{
-  width:52px;height:52px;border-radius:50%;border:none;
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;cursor:pointer;transition:all .2s;
-  background:rgba(255,255,255,.12);color:white;
-}
-.vc-ctrl:active{transform:scale(.9)}
+.inc-accept{width:64px;height:64px;border-radius:50%;background:#22c55e;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(34,197,94,.4)}
+.inc-reject{width:64px;height:64px;border-radius:50%;background:#ef4444;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,.4)}
+.vc-controls{background:rgba(0,0,0,.7);backdrop-filter:blur(12px);padding:16px 24px 24px;display:flex;align-items:center;justify-content:center;gap:20px;flex-shrink:0}
+.vc-ctrl{width:52px;height:52px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;background:rgba(255,255,255,.12);color:white}
 .vc-ctrl.muted{background:rgba(255,255,255,.25)}
-.vc-ctrl.off{background:rgba(255,255,255,.08);opacity:.5}
 .vc-end{background:#ef4444 !important;box-shadow:0 4px 16px rgba(239,68,68,.4) !important}
 .vc-timer{color:rgba(255,255,255,.6);font-size:.85rem;min-width:50px;text-align:center}
 
@@ -227,8 +208,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 .modal-steps{text-align:left;font-size:.83rem;color:#555;line-height:2;margin-bottom:20px}
 .modal-steps b{color:var(--pink)}
 .modal-close{background:var(--pink);border:none;border-radius:10px;color:white;padding:11px 28px;font-family:'DM Sans',sans-serif;font-size:.9rem;cursor:pointer}
-
-/* Profile modal */
 .prof-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
 .prof-modal.show{display:flex}
 .prof-box{background:white;border-radius:20px;padding:28px 24px;max-width:320px;width:100%}
@@ -254,24 +233,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 </head>
 <body>
 
+<!-- Connecting overlay -->
+<div id="connectingOverlay">
+  <div class="spinner"></div>
+  <div class="conn-txt">Connecting Sabhar ❤️</div>
+</div>
+
 <!-- Lightbox -->
 <div id="lb"><img id="lbImg" src="" alt=""><button class="lbx" onclick="closeLb()">✕</button></div>
-
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Mic/Cam permission modal -->
+<!-- Perm modal -->
 <div class="modal-overlay" id="permModal">
   <div class="modal-box">
     <h3>📷 Allow Camera & Mic</h3>
-    <p>To video call, allow camera and microphone access in your browser settings.</p>
+    <p>To video call, please allow camera and microphone access.</p>
     <div class="modal-steps">
-      <b>Chrome / Edge:</b><br>
-      1. Tap 🔒 lock icon in address bar<br>
-      2. Set <b>Camera</b> & <b>Microphone → Allow</b><br><br>
-      <b>Safari (iPhone):</b><br>
-      1. <b>Settings → Safari → Camera & Mic → Allow</b><br><br>
-      Then try the video call again! 📹
+      <b>Chrome:</b><br>
+      1. Tap 🔒 lock in address bar<br>
+      2. Camera & Mic → <b>Allow</b><br><br>
+      <b>Safari:</b><br>
+      Settings → Safari → Camera & Mic → <b>Allow</b>
     </div>
     <button class="modal-close" onclick="document.getElementById('permModal').classList.remove('show')">Got it ❤️</button>
   </div>
@@ -290,9 +272,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
   </div>
 </div>
 
-<!-- INCOMING CALL -->
+<!-- Incoming call -->
 <div id="incomingScreen">
-  <div class="inc-avatar" id="incAvatar"><span id="incAvatarText"></span></div>
+  <div class="inc-avatar" id="incAvatar"><span id="incAvatarTxt"></span></div>
   <div class="inc-name" id="incName"></div>
   <div class="inc-sub">📹 Video Call</div>
   <div class="inc-btns">
@@ -301,22 +283,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
   </div>
 </div>
 
-<!-- VIDEO CALL SCREEN -->
+<!-- Video call screen -->
 <div id="vcScreen">
   <div class="vc-videos">
     <video id="remoteVideo" autoplay playsinline></video>
-    <video id="localVideo"  autoplay playsinline muted></video>
-    <!-- Waiting overlay -->
+    <video id="localVideo" autoplay playsinline muted></video>
     <div class="vc-status" id="vcStatus">
-      <div class="vc-avatar-big vc-pulse" id="vcStatusAv"><span id="vcStatusAvTxt"></span></div>
+      <div class="vc-avatar-big" id="vcStatusAv"><span id="vcStatusAvTxt"></span></div>
       <div class="vc-name" id="vcStatusName"></div>
       <div class="vc-stat" id="vcStatusTxt">Connecting...</div>
     </div>
   </div>
   <div class="vc-controls">
-    <button class="vc-ctrl" id="btnMic"   onclick="toggleMic()"  title="Mute">🎙️</button>
-    <button class="vc-ctrl vc-end"        onclick="endCall()"    title="End">📵</button>
-    <button class="vc-ctrl" id="btnCam"   onclick="toggleCam()"  title="Camera">📷</button>
+    <button class="vc-ctrl" id="btnMic" onclick="toggleMic()">🎙️</button>
+    <button class="vc-ctrl vc-end" onclick="endCall()">📵</button>
+    <button class="vc-ctrl" id="btnCam" onclick="toggleCam()">📷</button>
     <span class="vc-timer" id="vcTimer">00:00</span>
   </div>
 </div>
@@ -351,8 +332,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
         <div class="profile-edit-hint">tap to edit</div>
       </div>
       <div style="flex:1;text-align:center">
-        <div class="profile-hearts">❤️</div>
+        <div style="font-size:1.2rem">❤️</div>
         <div style="font-size:.6rem;color:var(--muted);letter-spacing:1px">FOREVER</div>
+        <div style="font-size:.6rem;color:#22c55e;margin-top:2px"><span class="online-dot"></span>Live</div>
       </div>
       <div class="profile-item" onclick="openProfModal('sabu')">
         <div class="profile-pic" id="avSabu"><span id="avSabuTxt">S</span></div>
@@ -376,7 +358,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
   </div>
 
   <div class="msgs" id="msgs">
-    <div class="day-lbl">✨ Your story begins here ✨</div>
+    <div class="day-lbl" id="startLbl">✨ Loading messages... ✨</div>
   </div>
 
   <div class="typing-bar">
@@ -405,7 +387,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
     <input type="file" id="picInHarsh" accept="image/*" onchange="onPicChosen(event)">
     <input type="file" id="picInSabu"  accept="image/*" onchange="onPicChosen(event)">
     <textarea class="tinput" id="msgBox" placeholder="Message..."
-      oninput="grow(this)"
+      oninput="grow(this);onTyping()"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"
     ></textarea>
     <button class="vbtn" id="vbtn"
@@ -416,29 +398,40 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);height:100dvh;overflo
 </div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────
 const USERS = {
   harsh:{pass:'harsh123',name:'Harsh',init:'H'},
   sabu: {pass:'sabu123', name:'Sabu', init:'S'}
 };
 const ANN = new Date('2022-10-29');
+const PEER_IDS = {harsh:'sabhar-harsh-v2',sabu:'sabhar-sabu-v2'};
 
-// ── STATE ─────────────────────────────────────────
 let who='harsh', me=null;
-let msgs  = JSON.parse(localStorage.getItem('sh4_msgs')||'[]');
-let pics  = JSON.parse(localStorage.getItem('sh4_pics')||'{}');
+let pics = JSON.parse(localStorage.getItem('sh_pics')||'{}');
 let rec=null, recChunks=[];
 let activeMenu=null;
 let profTarget=null, profTempSrc=null;
-
-// ── VIDEO CALL STATE ──────────────────────────────
-// We use PeerJS for WebRTC signalling via the free PeerJS cloud server
-// Peer IDs: "sabhar-harsh" and "sabhar-sabu" — fixed, so they can always find each other
-const PEER_IDS = { harsh:'sabhar-harsh-2024', sabu:'sabhar-sabu-2024' };
 let peer=null, currentCall=null, localStream=null;
-let micOn=true, camOn=true;
-let callTimer=null, callSeconds=0;
+let micOn=true, camOn=true, callTimer=null, callSeconds=0;
 let incomingCallObj=null;
+let unsubMsgs=null;
+let typingTimer=null;
+
+// Wait for Firebase to be ready
+window.addEventListener('firebase-ready', ()=>{
+  document.getElementById('connectingOverlay').classList.add('hide');
+  requestPerms();
+});
+
+// Fallback hide after 5s if Firebase is slow
+setTimeout(()=>document.getElementById('connectingOverlay').classList.add('hide'), 5000);
+
+// Request camera+mic on load
+async function requestPerms(){
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    s.getTracks().forEach(t=>t.stop());
+  } catch(e){}
+}
 
 // ── LOGIN ─────────────────────────────────────────
 function pickUser(u){
@@ -456,7 +449,8 @@ function doLogin(){
     document.getElementById('loginScreen').classList.add('out');
     setTimeout(()=>{
       document.getElementById('chatScreen').classList.add('show');
-      calcAnn(); loadPics(); renderAll(); scrollEnd();
+      calcAnn(); loadPics();
+      subscribeMessages();
       showToast('Welcome back, '+USERS[me].name+' ❤️');
       initPeer();
     },500);
@@ -469,14 +463,16 @@ function doLogin(){
 }
 
 function logout(){
-  if(peer){peer.destroy();peer=null;}
+  if(unsubMsgs){unsubMsgs();unsubMsgs=null;}
+  if(peer){try{peer.destroy();}catch(e){} peer=null;}
   me=null;
   document.getElementById('chatScreen').classList.remove('show');
   document.getElementById('loginScreen').classList.remove('out');
   document.getElementById('passIn').value='';
+  document.getElementById('msgs').innerHTML='<div class="day-lbl" id="startLbl">✨ Loading messages... ✨</div>';
 }
 
-// ── ANNIVERSARY ───────────────────────────────────
+// ── ANNIVERSARY ────────────────────────────────────
 function calcAnn(){
   const today=new Date(); today.setHours(0,0,0,0);
   const ann=new Date(ANN); ann.setHours(0,0,0,0);
@@ -490,11 +486,10 @@ function calcAnn(){
   document.getElementById('nextAnn').textContent=dtn===0?'🎊 Happy '+nyr+'th Anniversary!!':'🎀 '+nyr+'th ann. in '+dtn+' days';
 }
 
-// ── PROFILE PICS ─────────────────────────────────
+// ── PROFILE PICS ──────────────────────────────────
 function loadPics(){
-  ['harsh','sabu'].forEach(u=>{ if(pics[u]) setAv(u,pics[u]); });
+  ['harsh','sabu'].forEach(u=>{if(pics[u]) setAv(u,pics[u]);});
 }
-
 function setAv(user,src){
   const el=document.getElementById(user==='harsh'?'avHarsh':'avSabu');
   el.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
@@ -502,7 +497,6 @@ function setAv(user,src){
     av.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
   });
 }
-
 function openProfModal(user){
   profTarget=user; profTempSrc=pics[user]||null;
   document.getElementById('profTitle').textContent=(user==='harsh'?'Harsh':'Sabu\'s')+' Profile Photo';
@@ -511,238 +505,70 @@ function openProfModal(user){
   else{prev.src='';prev.style.display='none';}
   document.getElementById('profModal').classList.add('show');
 }
-
-function chooseProfPic(){ document.getElementById(profTarget==='harsh'?'picInHarsh':'picInSabu').click(); }
-
+function chooseProfPic(){document.getElementById(profTarget==='harsh'?'picInHarsh':'picInSabu').click();}
 function onPicChosen(e){
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=ev=>{
-    profTempSrc=ev.target.result;
-    const prev=document.getElementById('profPreview');
-    prev.src=profTempSrc; prev.style.display='block';
-  };
-  r.readAsDataURL(f);
-  e.target.value='';
+  r.onload=ev=>{profTempSrc=ev.target.result;const prev=document.getElementById('profPreview');prev.src=profTempSrc;prev.style.display='block';};
+  r.readAsDataURL(f); e.target.value='';
 }
-
 function saveProfPic(){
   if(!profTempSrc){closeProfModal();return;}
   pics[profTarget]=profTempSrc;
-  localStorage.setItem('sh4_pics',JSON.stringify(pics));
+  localStorage.setItem('sh_pics',JSON.stringify(pics));
   setAv(profTarget,profTempSrc);
   closeProfModal(); showToast('Photo saved ❤️');
 }
+function closeProfModal(){document.getElementById('profModal').classList.remove('show');profTarget=null;profTempSrc=null;}
 
-function closeProfModal(){
-  document.getElementById('profModal').classList.remove('show');
-  profTarget=null; profTempSrc=null;
-}
-
-// ── WEBRTC / PEER ─────────────────────────────────
-function initPeer(){
-  const myPeerId = PEER_IDS[me];
-  // Destroy existing peer if any
-  if(peer){ try{peer.destroy();}catch(e){} peer=null; }
-
-  try {
-    peer = new Peer(myPeerId, {
-      host: '0.peerjs.com', port: 443, path: '/', secure: true,
-      config: { iceServers:[
-        {urls:'stun:stun.l.google.com:19302'},
-        {urls:'stun:stun1.l.google.com:19302'}
-      ]}
+// ── FIRESTORE REAL-TIME MESSAGES ──────────────────
+function subscribeMessages(){
+  if(!window._fbReady){setTimeout(subscribeMessages,500);return;}
+  const db=window._db;
+  const q=window._query(window._collection(db,'messages'),window._orderBy('createdAt','asc'));
+  unsubMsgs = window._onSnapshot(q, snapshot=>{
+    const area=document.getElementById('msgs');
+    area.innerHTML='';
+    if(snapshot.empty){
+      area.innerHTML='<div class="day-lbl">✨ Your story begins here ✨</div>';
+      return;
+    }
+    area.innerHTML='<div class="day-lbl">✨ Your story begins here ✨</div>';
+    snapshot.forEach(docSnap=>{
+      const m={id:docSnap.id,...docSnap.data()};
+      renderOne(m);
     });
-  } catch(e) {
-    // PeerJS not available (e.g. offline) — degrade gracefully
-    return;
-  }
-
-  peer.on('open', id => console.log('Peer ready:', id));
-
-  peer.on('call', call => {
-    incomingCallObj = call;
-    const callerUser = me==='harsh' ? 'sabu' : 'harsh';
-    // Show incoming call UI
-    const inc=document.getElementById('incomingScreen');
-    document.getElementById('incName').textContent = USERS[callerUser].name;
-    document.getElementById('incAvatarText').textContent = USERS[callerUser].init;
-    const incAv = document.getElementById('incAvatar');
-    if(pics[callerUser]){
-      incAv.innerHTML='<img src="'+pics[callerUser]+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-    }
-    inc.classList.add('show');
-    // Ring tone feel
-    playRing();
-  });
-
-  peer.on('error', err => {
-    console.warn('Peer error:', err.type, err.message);
-    if(err.type==='unavailable-id'){
-      // ID taken — retry with unique suffix
-      setTimeout(()=>{
-        if(peer){try{peer.destroy();}catch(e){}}
-        peer = new Peer(PEER_IDS[me]+'-'+Date.now().toString().slice(-4), {
-          host:'0.peerjs.com',port:443,path:'/',secure:true
-        });
-      },1000);
-    }
+    scrollEnd();
   });
 }
 
-let ringAudio=null;
-function playRing(){
-  // Create a simple oscillator ring tone
-  try {
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    function beep(){
-      const o=ctx.createOscillator();
-      const g=ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value=880; g.gain.value=0.3;
-      o.start(); o.stop(ctx.currentTime+0.3);
-    }
-    ringAudio={stop:()=>ctx.close()};
-    let i=0;
-    const iv=setInterval(()=>{ beep(); if(++i>6) clearInterval(iv); },600);
-    ringAudio.interval=iv;
-  } catch(e){}
-}
-function stopRing(){ if(ringAudio){ clearInterval(ringAudio.interval); try{ringAudio.stop();}catch(e){} ringAudio=null; } }
-
-async function startVideoCall(){
-  if(!peer||!peer.open){ showToast('Connecting... try again in a moment'); initPeer(); return; }
-  const otherUser = me==='harsh'?'sabu':'harsh';
-  const otherPeerId = PEER_IDS[otherUser];
-
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-  } catch(e) {
-    document.getElementById('permModal').classList.add('show'); return;
-  }
-
-  document.getElementById('localVideo').srcObject = localStream;
-  showVcScreen(otherUser, 'Calling...');
-
-  const call = peer.call(otherPeerId, localStream);
-  currentCall = call;
-
-  call.on('stream', remoteStream => {
-    document.getElementById('remoteVideo').srcObject = remoteStream;
-    document.getElementById('vcStatus').classList.add('hidden');
-    startCallTimer();
+async function sendToFirestore(m){
+  if(!window._fbReady) return;
+  const db=window._db;
+  await window._addDoc(window._collection(db,'messages'),{
+    sender: m.sender,
+    type:   m.type,
+    text:   m.text||'',
+    data:   m.data||'',
+    time:   m.time,
+    react:  m.react||'',
+    createdAt: window._serverTimestamp()
   });
-
-  call.on('close', ()=>endCall());
-  call.on('error', ()=>endCall());
-
-  // Timeout if no answer in 30s
-  setTimeout(()=>{ if(currentCall&&!document.getElementById('vcStatus').classList.contains('hidden')){ showToast('No answer 💔'); endCall(); } },30000);
 }
 
-async function acceptCall(){
-  stopRing();
-  document.getElementById('incomingScreen').classList.remove('show');
-  if(!incomingCallObj) return;
-
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-  } catch(e) {
-    document.getElementById('permModal').classList.add('show');
-    incomingCallObj.close(); incomingCallObj=null; return;
-  }
-
-  document.getElementById('localVideo').srcObject = localStream;
-  const callerUser = me==='harsh'?'sabu':'harsh';
-  showVcScreen(callerUser, 'Connected ❤️');
-  document.getElementById('vcStatus').classList.add('hidden');
-
-  incomingCallObj.answer(localStream);
-  currentCall = incomingCallObj;
-  incomingCallObj = null;
-
-  currentCall.on('stream', remoteStream => {
-    document.getElementById('remoteVideo').srcObject = remoteStream;
-    document.getElementById('vcStatus').classList.add('hidden');
-    startCallTimer();
-  });
-
-  currentCall.on('close', ()=>endCall());
-  currentCall.on('error', ()=>endCall());
+async function deleteFromFirestore(id){
+  if(!window._fbReady) return;
+  const db=window._db;
+  await window._deleteDoc(window._doc(db,'messages',id));
 }
 
-function rejectCall(){
-  stopRing();
-  document.getElementById('incomingScreen').classList.remove('show');
-  if(incomingCallObj){ incomingCallObj.close(); incomingCallObj=null; }
+async function reactInFirestore(id, react){
+  if(!window._fbReady) return;
+  const db=window._db;
+  await window._updateDoc(window._doc(db,'messages',id),{react: react||''});
 }
 
-function showVcScreen(otherUser, statusTxt){
-  const otherU = USERS[otherUser];
-  document.getElementById('vcStatusName').textContent = otherU.name;
-  document.getElementById('vcStatusTxt').textContent  = statusTxt;
-  const av = document.getElementById('vcStatusAv');
-  document.getElementById('vcStatusAvTxt').textContent = otherU.init;
-  if(pics[otherUser]){
-    av.innerHTML='<img src="'+pics[otherUser]+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-  } else {
-    av.innerHTML='<span id="vcStatusAvTxt">'+otherU.init+'</span>';
-  }
-  document.getElementById('vcStatus').classList.remove('hidden');
-  document.getElementById('vcScreen').classList.add('show');
-  micOn=true; camOn=true;
-  document.getElementById('btnMic').textContent='🎙️';
-  document.getElementById('btnCam').textContent='📷';
-}
-
-function endCall(){
-  if(currentCall){try{currentCall.close();}catch(e){} currentCall=null;}
-  if(localStream){localStream.getTracks().forEach(t=>t.stop()); localStream=null;}
-  stopRing(); stopCallTimer();
-  document.getElementById('vcScreen').classList.remove('show');
-  document.getElementById('remoteVideo').srcObject=null;
-  document.getElementById('localVideo').srcObject=null;
-  document.getElementById('vcStatus').classList.remove('hidden');
-}
-
-function toggleMic(){
-  micOn=!micOn;
-  if(localStream) localStream.getAudioTracks().forEach(t=>t.enabled=micOn);
-  document.getElementById('btnMic').textContent=micOn?'🎙️':'🔇';
-  document.getElementById('btnMic').classList.toggle('muted',!micOn);
-}
-
-function toggleCam(){
-  camOn=!camOn;
-  if(localStream) localStream.getVideoTracks().forEach(t=>t.enabled=camOn);
-  document.getElementById('btnCam').textContent=camOn?'📷':'🚫';
-  document.getElementById('btnCam').classList.toggle('off',!camOn);
-}
-
-function startCallTimer(){
-  callSeconds=0;
-  callTimer=setInterval(()=>{
-    callSeconds++;
-    const m=String(Math.floor(callSeconds/60)).padStart(2,'0');
-    const s=String(callSeconds%60).padStart(2,'0');
-    document.getElementById('vcTimer').textContent=m+':'+s;
-  },1000);
-}
-function stopCallTimer(){
-  clearInterval(callTimer); callTimer=null;
-  document.getElementById('vcTimer').textContent='00:00';
-}
-
-// ── MESSAGES ──────────────────────────────────────
-function save(){ localStorage.setItem('sh4_msgs',JSON.stringify(msgs)); }
-
-function renderAll(){
-  const area=document.getElementById('msgs');
-  const lbl=area.querySelector('.day-lbl');
-  area.innerHTML=''; area.appendChild(lbl);
-  msgs.forEach(renderOne);
-}
-
+// ── RENDER ────────────────────────────────────────
 function mkAv(user,isMe){
   const av=document.createElement('div');
   av.className='av '+(isMe?'me-av':'her-av');
@@ -770,18 +596,20 @@ function renderOne(m){
   if(m.type==='text'){
     bub.innerHTML=esc(m.text)+'<span class="bt">'+m.time+'</span>';
   } else if(m.type==='image'){
-    const safe=m.data.replace(/'/g,"\\'");
-    bub.innerHTML='<img src="'+m.data+'" class="bimg" onclick="openLb(\''+safe+'\')"><span class="bt">'+m.time+'</span>';
+    const safe=(m.data||'').replace(/'/g,"\\'");
+    bub.innerHTML='<img src="'+m.data+'" class="bimg" onclick="openLb(\''+safe+'\')" onerror="this.style.display=\'none\'"><span class="bt">'+m.time+'</span>';
   } else if(m.type==='video'){
     bub.innerHTML='<video src="'+m.data+'" class="bvid" controls></video><span class="bt">'+m.time+'</span>';
   } else if(m.type==='voice'){
     bub.innerHTML=vHTML(m.data,m.time);
   }
 
+  // Double tap = react
   let lt=0;
-  bub.addEventListener('dblclick',()=>reactMsg(m.id));
-  bub.addEventListener('touchend',()=>{const n=Date.now();if(n-lt<320)reactMsg(m.id);lt=n;});
+  bub.addEventListener('dblclick',()=>reactMsg(m.id, m.react));
+  bub.addEventListener('touchend',()=>{const n=Date.now();if(n-lt<320)reactMsg(m.id,m.react);lt=n;});
 
+  // Long press = menu (own messages only)
   if(isMe){
     let pt=null;
     bub.addEventListener('contextmenu',ev=>{ev.preventDefault();showMenu(m.id,ev.clientX,ev.clientY);});
@@ -792,7 +620,7 @@ function renderOne(m){
 
   wrap.appendChild(bub);
   if(m.react){
-    const rd=document.createElement('div'); rd.className='react-dot'; rd.textContent=m.react;
+    const rd=document.createElement('div');rd.className='react-dot';rd.textContent=m.react;
     wrap.appendChild(rd);
   }
   row.appendChild(mkAv(m.sender,isMe));
@@ -800,53 +628,68 @@ function renderOne(m){
   area.appendChild(row);
 }
 
-function reactMsg(id){
-  const m=msgs.find(x=>x.id===id); if(!m) return;
-  m.react=m.react?null:'❤️'; save(); renderAll(); scrollEnd();
+function reactMsg(id, current){
+  const newReact = current ? '' : '❤️';
+  reactInFirestore(id, newReact);
 }
 
 function showMenu(id,x,y){
   closeMenu();
   const menu=document.createElement('div');
-  menu.className='msg-menu'; menu.id='activeMenuEl';
-  const rb=document.createElement('button'); rb.textContent='❤️  React';
-  rb.onclick=()=>{reactMsg(id);closeMenu();};
-  const dv=document.createElement('div'); dv.className='divider';
-  const db=document.createElement('button'); db.className='del'; db.textContent='🗑  Delete';
-  db.onclick=()=>{msgs=msgs.filter(m=>m.id!==id);save();renderAll();scrollEnd();showToast('Deleted');closeMenu();};
-  menu.appendChild(rb); menu.appendChild(dv); menu.appendChild(db);
-  document.body.appendChild(menu); activeMenu=menu;
+  menu.className='msg-menu';
+  const rb=document.createElement('button');rb.textContent='❤️  React';
+  rb.onclick=()=>{reactInFirestore(id,'❤️');closeMenu();};
+  const dv=document.createElement('div');dv.className='divider';
+  const db=document.createElement('button');db.className='del';db.textContent='🗑  Delete';
+  db.onclick=()=>{deleteFromFirestore(id);showToast('Deleted');closeMenu();};
+  menu.appendChild(rb);menu.appendChild(dv);menu.appendChild(db);
+  document.body.appendChild(menu);activeMenu=menu;
   let left=x,top=y;
   if(left+155>window.innerWidth) left=window.innerWidth-160;
   if(top+90>window.innerHeight) top=y-95;
-  menu.style.left=left+'px'; menu.style.top=top+'px';
+  menu.style.left=left+'px';menu.style.top=top+'px';
   setTimeout(()=>document.addEventListener('click',closeMenu,{once:true}),50);
 }
 function closeMenu(){if(activeMenu){activeMenu.remove();activeMenu=null;}}
-
-// ── VOICE ─────────────────────────────────────────
-function vHTML(src,time){
-  const bars=Array.from({length:13},(_,i)=>'<span style="animation-delay:'+(i*0.08)+'s"></span>').join('');
-  const safe=src.replace(/'/g,"\\'");
-  return '<div class="vmsg"><button class="vplay" onclick="playV(this,\''+safe+'\')">▶</button><div class="vwave">'+bars+'</div></div><span class="bt">'+time+'</span>';
-}
-function playV(btn,src){const a=new Audio(src);btn.textContent='⏸';a.play();a.onended=()=>btn.textContent='▶';}
 
 // ── SEND ──────────────────────────────────────────
 function send(type='text',data=null){
   const box=document.getElementById('msgBox');
   const txt=box.value.trim();
   if(type==='text'&&!txt) return;
-  const m={id:Date.now()+'',sender:me,type,text:type==='text'?txt:null,data,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),react:null};
-  msgs.push(m); save(); renderOne(m); scrollEnd();
-  if(type==='text'){box.value='';box.style.height='auto';heartPop();fakeTyping();}
+  const m={
+    sender:me, type,
+    text:type==='text'?txt:'',
+    data:data||'',
+    time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+    react:''
+  };
+  sendToFirestore(m);
+  if(type==='text'){box.value='';box.style.height='auto';heartPop();}
 }
-function fakeTyping(){const el=document.getElementById('ttext');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
-function scrollEnd(){const a=document.getElementById('msgs');setTimeout(()=>a.scrollTop=a.scrollHeight,60);}
+
+// Typing indicator via Firestore
+function onTyping(){
+  clearTimeout(typingTimer);
+  // store typing state
+  if(window._fbReady){
+    window._updateDoc(window._doc(window._db,'typing',me),{typing:true,ts:Date.now()}).catch(()=>{
+      window._addDoc(window._collection(window._db,'typing'),{user:me,typing:true});
+    });
+  }
+  typingTimer=setTimeout(()=>{
+    if(window._fbReady){
+      window._updateDoc(window._doc(window._db,'typing',me),{typing:false}).catch(()=>{});
+    }
+  },2000);
+}
+
+function scrollEnd(){const a=document.getElementById('msgs');setTimeout(()=>a.scrollTop=a.scrollHeight,80);}
 
 // ── FILE ──────────────────────────────────────────
 function onFile(e){
   const f=e.target.files[0]; if(!f) return;
+  // For images/videos store as base64 (simple approach, works up to ~1MB)
   const r=new FileReader();
   r.onload=ev=>send(f.type.startsWith('video')?'video':'image',ev.target.result);
   r.readAsDataURL(f); e.target.value='';
@@ -855,18 +698,13 @@ function onFile(e){
 // ── VOICE REC ─────────────────────────────────────
 async function startRec(e){
   if(e) e.preventDefault();
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    document.getElementById('permModal').classList.add('show'); return;
-  }
   try {
     const s=await navigator.mediaDevices.getUserMedia({audio:true});
-    rec=new MediaRecorder(s); recChunks=[];
+    rec=new MediaRecorder(s);recChunks=[];
     rec.ondataavailable=ev=>recChunks.push(ev.data);
     rec.start();
     document.getElementById('vbtn').classList.add('rec');
-  } catch(e){
-    document.getElementById('permModal').classList.add('show');
-  }
+  } catch(err){document.getElementById('permModal').classList.add('show');}
 }
 function stopRec(){
   if(!rec||rec.state!=='recording') return;
@@ -881,6 +719,88 @@ function stopRec(){
   document.getElementById('vbtn').classList.remove('rec');
 }
 
+// ── VIDEO CALL (PeerJS WebRTC) ────────────────────
+function initPeer(){
+  if(peer){try{peer.destroy();}catch(e){}}
+  peer=new Peer(PEER_IDS[me],{host:'0.peerjs.com',port:443,path:'/',secure:true,
+    config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}
+  });
+  peer.on('call',call=>{
+    incomingCallObj=call;
+    const caller=me==='harsh'?'sabu':'harsh';
+    document.getElementById('incName').textContent=USERS[caller].name;
+    document.getElementById('incAvatarTxt').textContent=USERS[caller].init;
+    if(pics[caller]) document.getElementById('incAvatar').innerHTML='<img src="'+pics[caller]+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    document.getElementById('incomingScreen').classList.add('show');
+  });
+  peer.on('error',()=>{});
+}
+
+async function startVideoCall(){
+  if(!peer||!peer.open){showToast('Connecting... try again');initPeer();return;}
+  const other=me==='harsh'?'sabu':'harsh';
+  try{localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});}
+  catch(e){document.getElementById('permModal').classList.add('show');return;}
+  document.getElementById('localVideo').srcObject=localStream;
+  showVcScreen(other,'Calling...');
+  const call=peer.call(PEER_IDS[other],localStream);
+  currentCall=call;
+  call.on('stream',s=>{document.getElementById('remoteVideo').srcObject=s;document.getElementById('vcStatus').classList.add('hidden');startCallTimer();});
+  call.on('close',()=>endCall());
+  call.on('error',()=>endCall());
+  setTimeout(()=>{if(currentCall&&!document.getElementById('vcStatus').classList.contains('hidden')){showToast('No answer 💔');endCall();}},30000);
+}
+
+async function acceptCall(){
+  document.getElementById('incomingScreen').classList.remove('show');
+  if(!incomingCallObj) return;
+  try{localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});}
+  catch(e){document.getElementById('permModal').classList.add('show');incomingCallObj.close();incomingCallObj=null;return;}
+  document.getElementById('localVideo').srcObject=localStream;
+  const caller=me==='harsh'?'sabu':'harsh';
+  showVcScreen(caller,'Connected ❤️');
+  document.getElementById('vcStatus').classList.add('hidden');
+  incomingCallObj.answer(localStream);
+  currentCall=incomingCallObj; incomingCallObj=null;
+  currentCall.on('stream',s=>{document.getElementById('remoteVideo').srcObject=s;startCallTimer();});
+  currentCall.on('close',()=>endCall());
+}
+function rejectCall(){
+  document.getElementById('incomingScreen').classList.remove('show');
+  if(incomingCallObj){incomingCallObj.close();incomingCallObj=null;}
+}
+function showVcScreen(other,txt){
+  document.getElementById('vcStatusName').textContent=USERS[other].name;
+  document.getElementById('vcStatusTxt').textContent=txt;
+  document.getElementById('vcStatusAvTxt').textContent=USERS[other].init;
+  if(pics[other]) document.getElementById('vcStatusAv').innerHTML='<img src="'+pics[other]+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+  document.getElementById('vcStatus').classList.remove('hidden');
+  document.getElementById('vcScreen').classList.add('show');
+  micOn=true;camOn=true;
+  document.getElementById('btnMic').textContent='🎙️';
+  document.getElementById('btnCam').textContent='📷';
+}
+function endCall(){
+  if(currentCall){try{currentCall.close();}catch(e){}currentCall=null;}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  stopCallTimer();
+  document.getElementById('vcScreen').classList.remove('show');
+  document.getElementById('remoteVideo').srcObject=null;
+  document.getElementById('localVideo').srcObject=null;
+}
+function toggleMic(){micOn=!micOn;if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=micOn);document.getElementById('btnMic').textContent=micOn?'🎙️':'🔇';document.getElementById('btnMic').classList.toggle('muted',!micOn);}
+function toggleCam(){camOn=!camOn;if(localStream)localStream.getVideoTracks().forEach(t=>t.enabled=camOn);document.getElementById('btnCam').textContent=camOn?'📷':'🚫';}
+function startCallTimer(){callSeconds=0;callTimer=setInterval(()=>{callSeconds++;const m=String(Math.floor(callSeconds/60)).padStart(2,'0'),s=String(callSeconds%60).padStart(2,'0');document.getElementById('vcTimer').textContent=m+':'+s;},1000);}
+function stopCallTimer(){clearInterval(callTimer);callTimer=null;document.getElementById('vcTimer').textContent='00:00';}
+
+// ── VOICE PLAYBACK ────────────────────────────────
+function vHTML(src,time){
+  const bars=Array.from({length:13},(_,i)=>'<span style="animation-delay:'+(i*0.08)+'s"></span>').join('');
+  const safe=(src||'').replace(/'/g,"\\'");
+  return '<div class="vmsg"><button class="vplay" onclick="playV(this,\''+safe+'\')">▶</button><div class="vwave">'+bars+'</div></div><span class="bt">'+time+'</span>';
+}
+function playV(btn,src){const a=new Audio(src);btn.textContent='⏸';a.play();a.onended=()=>btn.textContent='▶';}
+
 // ── EMOJI ─────────────────────────────────────────
 function toggleE(){document.getElementById('etray').classList.toggle('show');}
 function ei(e){const b=document.getElementById('msgBox');b.value+=e;b.focus();document.getElementById('etray').classList.remove('show');}
@@ -892,14 +812,13 @@ document.getElementById('lb').addEventListener('click',function(e){if(e.target==
 
 // ── UTILS ─────────────────────────────────────────
 function grow(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 function heartPop(){
   const btn=document.querySelector('.sbtn'),rc=btn.getBoundingClientRect();
   ['❤️','💕','🌸'].forEach((em,i)=>{
     setTimeout(()=>{
-      const h=document.createElement('div');
-      h.className='hpop';h.textContent=em;
+      const h=document.createElement('div');h.className='hpop';h.textContent=em;
       h.style.left=(rc.left+rc.width/2)+'px';h.style.top=(rc.top+rc.height/2)+'px';
       h.style.setProperty('--tx',(Math.random()-.5)*70+'px');
       h.style.setProperty('--ty',-(25+Math.random()*55)+'px');
@@ -911,72 +830,6 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.etray')&&!e.target.closest('.ibtn'))
     document.getElementById('etray').classList.remove('show');
 });
-
-// ── REQUEST PERMISSIONS ON LOAD ───────────────────
-// Ask for camera + mic immediately when page loads (like WhatsApp/Meet)
-(async function requestPermsOnLoad() {
-  try {
-    // This triggers the browser's native "Allow camera & microphone?" popup
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    // Immediately stop the tracks — we just needed the permission grant
-    stream.getTracks().forEach(t => t.stop());
-    console.log('✅ Camera & Mic permission granted');
-  } catch (err) {
-    // User denied or browser blocked — show a friendly one-time banner
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      showPermBanner();
-    } else if (err.name === 'NotFoundError') {
-      console.warn('No camera/mic found on this device');
-    } else {
-      console.warn('Permission request failed:', err.message);
-    }
-  }
-})();
-
-function showPermBanner() {
-  // Only show if the banner doesn't already exist
-  if (document.getElementById('permBanner')) return;
-  const banner = document.createElement('div');
-  banner.id = 'permBanner';
-  banner.style.cssText = `
-    position:fixed; bottom:0; left:0; right:0;
-    background:#1a1a1a; color:white;
-    padding:16px 20px; z-index:99999;
-    font-family:'DM Sans',sans-serif; font-size:.85rem;
-    display:flex; align-items:center; gap:12px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,.3);
-    animation: slideUp .3s ease;
-  `;
-  // Add keyframe for slideUp
-  if (!document.getElementById('bannerStyle')) {
-    const sty = document.createElement('style');
-    sty.id = 'bannerStyle';
-    sty.textContent = `@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`;
-    document.head.appendChild(sty);
-  }
-  banner.innerHTML = `
-    <span style="font-size:1.4rem">📷</span>
-    <div style="flex:1;line-height:1.5">
-      <b style="color:#f5b8c4">Camera & Mic blocked.</b><br>
-      Tap the <b style="color:#f5b8c4">🔒 lock icon</b> in your browser's address bar
-      → <b style="color:#f5b8c4">Site settings</b>
-      → set Camera & Microphone to <b style="color:#4ade80">Allow</b>
-      → reload the page.
-    </div>
-    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#aaa;font-size:1.2rem;cursor:pointer;padding:4px;">✕</button>
-  `;
-  document.body.appendChild(banner);
-}
-
-// ── DEMO MSGS ─────────────────────────────────────
-if(msgs.length===0){
-  msgs=[
-    {id:'1',sender:'harsh',type:'text',text:'Hi Sabu! 🌹 I made this just for us. Our own private little world.',time:'10:00 AM',react:null},
-    {id:'2',sender:'sabu', type:'text',text:'Awww Harsh this is so cute!! I love it ❤️',time:'10:01 AM',react:'❤️'},
-    {id:'3',sender:'harsh',type:'text',text:'2 years down, forever to go 💕',time:'10:02 AM',react:null},
-  ];
-  save();
-}
 </script>
 </body>
 </html>
